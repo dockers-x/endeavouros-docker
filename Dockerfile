@@ -20,11 +20,20 @@ RUN set -eux; \
         base-devel \
         ca-certificates \
         curl \
+        fastfetch \
         fish \
         git \
         paru \
         starship \
         sudo; \
+    useradd --create-home --shell /bin/bash builder; \
+    printf '%s\n' 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder; \
+    chmod 0440 /etc/sudoers.d/builder; \
+    sudo -u builder paru -S --noconfirm --needed --skipreview herdr-bin; \
+    rm -f /etc/sudoers.d/builder; \
+    userdel -r builder; \
+    usermod --shell /usr/bin/fish root; \
+    useradd -D --shell /usr/bin/fish; \
     rm -rf /var/cache/pacman/pkg/*
 
 # Add EndeavourOS repositories and packages without replacing the Arch mirrorlist.
