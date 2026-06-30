@@ -25,7 +25,7 @@ remove:
 # Target to run the Docker container interactively
 .PHONY: run
 run:
-	docker run -it $(IMAGE_NAME) /bin/bash
+	docker run -it $(IMAGE_NAME)
 
 # Target to list all Docker images
 .PHONY: images
