@@ -2,9 +2,8 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    tags:
+      - "*"
 
 env:
   REGISTRY: docker.io
@@ -27,15 +26,35 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Resolve Docker image tags
+        id: image-tags
+        run: |
+          set -euo pipefail
+
+          version="${GITHUB_REF_NAME}"
+          if [[ ! "$version" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Git tag '$version' is not a valid Docker tag. Use letters, numbers, underscores, dots, and dashes only."
+            exit 1
+          fi
+
+          {
+            echo "tags<<EOF"
+            echo "${REGISTRY}/${IMAGE_NAME}:${version}"
+            echo "${REGISTRY}/${IMAGE_NAME}:latest"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.image-tags.outputs.tags }}
           build-args: |
             BASE_IMAGE=endeavouros:latest
 
       - name: Image details
-        run: docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        env:
+          IMAGE_TAGS: ${{ steps.image-tags.outputs.tags }}
+        run: printf '%s\n' "$IMAGE_TAGS"

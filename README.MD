@@ -52,6 +52,25 @@ make build
 
 This will create a Docker image named `endeavouros:latest`.
 
+To build a local image with a specific tag, pass `IMAGE_TAG`:
+
+```bash
+make build IMAGE_TAG=v1.0.0
+```
+
+This will create a Docker image named `endeavouros:v1.0.0`.
+
+### Publishing the Docker Image
+
+Docker Hub publishing runs when a Git tag is pushed:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow publishes `docker.io/czyt/endeavouros:v1.0.0` and updates `docker.io/czyt/endeavouros:latest`.
+
 ### Running the Docker Container
 
 To run the Docker container interactively, use:

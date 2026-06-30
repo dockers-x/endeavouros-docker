@@ -1,5 +1,7 @@
-# Name of the Docker image
-IMAGE_NAME := endeavouros:latest
+# Name and tag of the Docker image
+IMAGE_REPOSITORY ?= endeavouros
+IMAGE_TAG ?= latest
+IMAGE_NAME := $(IMAGE_REPOSITORY):$(IMAGE_TAG)
 
 # BuildKit environment variable
 BUILDKIT := DOCKER_BUILDKIT=0
@@ -15,7 +17,7 @@ build:
 # Target to clean up intermediate images and containers
 .PHONY: clean
 clean:
-	docker rmi -f endeavouros:latest 
+	docker rmi -f $(IMAGE_NAME)
 
 # Target to remove the Docker image
 .PHONY: remove
