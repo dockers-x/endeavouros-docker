@@ -1,131 +1,138 @@
 # EndeavourOS Docker Image
 
-This repository contains a Docker setup for creating and managing an EndeavourOS-based Docker image. The `Makefile` provided automates the build process, container management, and cleanup tasks.
+Docker image for an EndeavourOS-flavored interactive Arch Linux environment.
 
-## Table of Contents
+- Source repository: `https://github.com/dockers-x/endeavouros-docker`
+- Docker Hub repository: `docker.io/czyt/endeavouros`
+- Published tags: Git tags publish matching Docker image tags, plus `latest`
 
-- [Project Overview](#project-overview)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Building the Docker Image](#building-the-docker-image)
-  - [Running the Docker Container](#running-the-docker-container)
-  - [Cleaning Up](#cleaning-up)
-  - [Other Commands](#other-commands)
-- [Contributing](#contributing)
-- [License](#license)
+## Pull From Docker Hub
 
-## Project Overview
+```bash
+docker pull docker.io/czyt/endeavouros:latest
+docker run --rm -it docker.io/czyt/endeavouros:latest
+```
 
-This project sets up an EndeavourOS environment within a Docker container. It uses a `Makefile` to streamline the process of building, running, and managing the Docker image.
+Versioned releases are available by tag:
+
+```bash
+docker pull docker.io/czyt/endeavouros:v0.1.1
+docker run --rm -it docker.io/czyt/endeavouros:v0.1.1
+```
+
+## Included Components
+
+The image starts from `archlinux:latest`, then layers in:
+
+- Arch and archlinuxcn package sources and keyrings.
+- EndeavourOS repository, keyring, mirrorlist, theming, and hooks.
+- Base development and shell tooling: `base-devel`, `ca-certificates`, `curl`, `fastfetch`, `fish`, `git`, `paru`, `starship`, and `sudo`.
+- AUR tooling package: `herdr-bin`.
+- Fish defaults for root and future users: Oh My Fish, Starship `pastel-powerline` preset, and mise shell integration.
+- `/etc/os-release` values that identify the container as EndeavourOS.
+
+Package lists are maintained in `scripts/packages.sh`.
+
+### Component Sources
+
+| Source | Components |
+| --- | --- |
+| `base_packages` | Pacman packages installed from Arch or enabled repositories. |
+| `aur_packages` | AUR packages installed with `paru` through a temporary build user. |
+| `endeavouros_packages` | Packages installed after enabling the EndeavourOS repository. |
+| `endeavouros_keys` | EndeavourOS signing keys imported before installing EndeavourOS packages. |
+
+## Build Layout
+
+The Dockerfile is intentionally small and delegates build steps to scripts. Scripts are mounted with BuildKit during `RUN` steps; they are not copied into the final image.
+
+| File | Purpose |
+| --- | --- |
+| `Dockerfile` | Mounts scripts at build time and runs the build phases in order. |
+| `scripts/packages.sh` | Central package, key, and component lists. |
+| `scripts/01-install-archlinux-base.sh` | Enables archlinuxcn and installs base packages plus AUR packages. |
+| `scripts/02-install-endeavouros.sh` | Adds EndeavourOS repository keys and packages. |
+| `scripts/03-configure-fish-defaults.sh` | Configures fish, Oh My Fish, Starship, and mise defaults. |
+| `scripts/04-write-os-release.sh` | Writes EndeavourOS identity metadata. |
+
+To add more software later, prefer editing the arrays in `scripts/packages.sh`:
+
+- Add pacman packages to `base_packages`.
+- Add AUR packages to `aur_packages`.
+- Add EndeavourOS packages to `endeavouros_packages`.
+
+If a component needs custom install logic, add a new numbered script under `scripts/` and run it from `Dockerfile`.
+
+Build scripts are only build-time inputs. They are mounted into the builder with BuildKit and are not retained under `/usr/local/lib/endeavouros-docker` or any other script directory in the final image.
 
 ## Prerequisites
 
-Before using this project, ensure you have the following installed:
-
-- Docker
-- Make (GNU Make)
-- Git (optional, for cloning the repository)
-
-## Installation
-
-1. **Clone the Repository:**
-
-   ```bash
-   git clone https://github.com/alex5402/endeavouros-docker.git
-   cd endeavouros-docker
-   ```
-
-2. **Set Up the Docker Environment:**
-
-   The provided `Makefile` will handle the setup, build, and management of the Docker image.
+- Docker with BuildKit support
+- Make
+- Git
 
 ## Usage
 
-### Building the Docker Image
+Clone the repository:
 
-To build the Docker image, use the following command:
+```bash
+git clone https://github.com/dockers-x/endeavouros-docker.git
+cd endeavouros-docker
+```
+
+Build the default local image:
 
 ```bash
 make build
 ```
 
-This will create a Docker image named `endeavouros:latest`.
+This creates `czyt/endeavouros:latest`.
 
-To build a local image with a specific tag, pass `IMAGE_TAG`:
-
-```bash
-make build IMAGE_TAG=v1.0.0
-```
-
-This will create a Docker image named `endeavouros:v1.0.0`.
-
-### Publishing the Docker Image
-
-Docker Hub publishing runs when a Git tag is pushed:
+Build a specific local tag:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+make build IMAGE_TAG=v0.1.0
 ```
 
-The workflow publishes `docker.io/czyt/endeavouros:v1.0.0` and updates `docker.io/czyt/endeavouros:latest`.
-
-### Running the Docker Container
-
-To run the Docker container interactively, use:
+Run the image interactively:
 
 ```bash
 make run
 ```
 
-This command starts a container from the `endeavouros:latest` image.
+Override the repository name when needed:
 
-### Cleaning Up
+```bash
+make build IMAGE_REPOSITORY=endeavouros IMAGE_TAG=dev
+```
 
-To remove intermediate images and containers, run:
+## Publishing
+
+Docker Hub publishing runs from Git tag pushes through GitHub Actions:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+For tag `v0.1.0`, the workflow publishes:
+
+- `docker.io/czyt/endeavouros:v0.1.0`
+- `docker.io/czyt/endeavouros:latest`
+
+The workflow rejects Git tags that are not valid Docker tag names.
+
+## Maintenance Commands
 
 ```bash
 make clean
+make remove
+make images
+make ps
+make stop
+make remove-containers
 ```
 
-### Other Commands
-
-- **Remove Docker Image:**
-
-  ```bash
-  make remove
-  ```
-
-- **List Docker Images:**
-
-  ```bash
-  make images
-  ```
-
-- **List Docker Containers:**
-
-  ```bash
-  make ps
-  ```
-
-- **Stop All Running Containers:**
-
-  ```bash
-  make stop
-  ```
-
-- **Remove All Stopped Containers:**
-
-  ```bash
-  make remove-containers
-  ```
-
-## Contributing
-
-Contributions are welcome! If you have suggestions or improvements, please open an issue or submit a pull request.
-
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
----
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

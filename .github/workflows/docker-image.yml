@@ -52,7 +52,7 @@ jobs:
           push: true
           tags: ${{ steps.image-tags.outputs.tags }}
           build-args: |
-            BASE_IMAGE=endeavouros:latest
+            SCRIPTS_SHA=${{ hashFiles('scripts/**') }}
 
       - name: Image details
         env:

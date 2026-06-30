@@ -1,10 +1,11 @@
 # Name and tag of the Docker image
-IMAGE_REPOSITORY ?= endeavouros
+IMAGE_REPOSITORY ?= czyt/endeavouros
 IMAGE_TAG ?= latest
 IMAGE_NAME := $(IMAGE_REPOSITORY):$(IMAGE_TAG)
+SCRIPTS_SHA ?= $(shell find scripts -type f -print | sort | xargs sha256sum | sha256sum | awk '{print $$1}')
 
 # BuildKit environment variable
-BUILDKIT := DOCKER_BUILDKIT=0
+BUILDKIT := DOCKER_BUILDKIT=1
 
 # Dockerfile path (adjust if your Dockerfile is in a different directory)
 DOCKERFILE := Dockerfile
@@ -12,7 +13,7 @@ DOCKERFILE := Dockerfile
 # Target to build the Docker image
 .PHONY: build
 build:
-	$(BUILDKIT) docker build -t $(IMAGE_NAME) -f $(DOCKERFILE) .
+	$(BUILDKIT) docker build --build-arg SCRIPTS_SHA=$(SCRIPTS_SHA) -t $(IMAGE_NAME) -f $(DOCKERFILE) .
 
 # Target to clean up intermediate images and containers
 .PHONY: clean
